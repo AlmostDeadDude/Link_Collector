@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://kit.fontawesome.com/d6065b6a9b.js" crossorigin="anonymous"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Itim&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style-min.css">
+    <title>Link collector</title>
+</head>
+<body>
+    <div id="content">
+        <div id="title">
+            <img src="img/chain.svg">
+            <div id="board">
+                <h1>Link Collector</h1>
+                <div id="msg"></div>
+            </div>
+        </div>
+        <div id="options">
+            <div class="opt" id="add">
+                <i class="fa-solid fa-plus"></i>
+                <span>Add</span>
+            </div>
+            <div class="opt" id="random">
+                <i class="fa-solid fa-link"></i>
+                <span>Random</span>
+            </div>
+            <div class="opt" id="collection">
+                <i class="fa-solid fa-list-ul"></i>
+                <span>Collection</span>
+            </div>
+            <div class="opt" id="configure">
+                <i class="fa-solid fa-gears"></i>
+                <span>Configure</span>
+            </div>
+        </div>
+
+        <picture id="bookshelf">
+            <source
+                type="image/avif"
+                srcset="img/bookshelf.avif"
+            />
+            <source
+                type="image/webp"
+                srcset="img/bookshelf.webp"
+            />
+            <img src='img/bookshelf.png'>
+        </picture>
+    </div>
+    <footer> 
+        <small>
+            © Copyright <span id="year">2022</span>, <a href="https://github.com/AlmostDeadDude" target="_blank" rel="noopener noreferrer">Ivan Shiller</a> 
+        </small> 
+        <small>
+            Illustration created with <a href="https://www.midjourney.com/" target="_blank" rel="noopener noreferrer">midjourney</a> 
+        </small> 
+    </footer>
+
+    <div id="card-collection" class="card-background hide">
+        <div class="card">
+            <div class="card-close">
+                <i class="fa-solid fa-times"></i>
+            </div>
+            <div class="card-title">Your links</div>
+            <div class="card-body">
+                <table>
+                    <colgroup>
+                        <col span="1" style="width: 5%;">
+                        <col span="1" style="width: 20%;">
+                        <col span="1" style="width: 40%;">
+                        <col span="1" style="width: 20%;">
+                        <col span="1" style="width: 5%;">
+                     </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Link</th>
+                            <th>Category</th>
+                            <th>Tags</th>
+                            <th>Date</th>
+                            <th>Remove</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <a href="https://www.example.com" target="_blank" rel="noopener noreferrer">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                </a>
+                            </td>
+                            <td>Categorie</td>
+                            <td>
+                                <div class="existing-tags">
+                                    <div class="existing-tag selected">tag1</div>
+                                    <div class="existing-tag selected">tag2</div>
+                                    <div class="existing-tag selected">tag3</div>
+                                    <div class="existing-tag selected">tag4</div>
+                                </div>
+                            </td>
+                            <td>01-01-2000</td>
+                            <td>
+                                <i class="fa-solid fa-trash"></i>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="https://www.example.com" target="_blank" rel="noopener noreferrer">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                </a>
+                            </td>
+                            <td>Categorie</td>
+                            <td>
+                                <div class="existing-tags">
+                                    <div class="existing-tag selected">tag1</div>
+                                    <div class="existing-tag selected">tag2</div>
+                                    <div class="existing-tag selected">tag3</div>
+                                    <div class="existing-tag selected">tag4</div>
+                                </div>
+                            </td>
+                            <td>01-01-2000</td>
+                            <td>
+                                <i class="fa-solid fa-trash"></i>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div id="card-random" class="card-background hide">
+        <div class="card">
+            <div class="card-close">
+                <i class="fa-solid fa-times"></i>
+            </div>
+            <div class="card-title">How random should it be?</div>
+            <div class="card-body">
+                <form id="form-random">
+                    <div class="form-group">
+                        <label for="title">
+                            Looking for certain categorie?
+                        </label>
+                        <select name="categorie" id="random_categorie">
+                            <option disabled selected> -- select an option -- </option>
+                            <!-- this div will be filled on page load from database -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tags">
+                            Interested in some tags?
+                            <span class="approved">
+                            </span>
+                        </label>
+                        <input type="text" class="form-control" id="random_tags" name="tags" placeholder="Enter tags, comma separated...">
+                    </div>
+                    <div id="tagsInRandom" class="existing-tags">
+                         <!-- this div will be filled on page load from database -->
+                    </div>
+                    <hr>
+                    <button type="submit" class="card-button">Give me the link</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div id="card-random-result" class="card-background hide">
+        <div class="card">
+            <div class="card-close">
+                <i class="fa-solid fa-times"></i>
+            </div>
+            <div class="card-title">Try this one!</div>
+            <div class="card-body">
+                <div class="card-text">
+                    <span id="linkToShow">link</span>
+                </div>
+                <span id="openOrCopy" class="card-text">
+                    <span>Open in new window
+                        <a id="openURL" href="http://example.com" target="_blank" rel="noopener noreferrer">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </span>
+                    <span>Copy URL to clipboard
+                        <a id="copyURL" href="http://example.com">
+                            <i class="fa-solid fa-copy"></i>
+                        </a>
+                    </span>
+                </span>
+                <div class="card-text">
+                    <span id="categorieToShow">category</span>
+                </div>
+                <div class="card-text">
+                    <div class="existing-tags">
+                        <!-- this div will be filled on request from database -->
+                    </div>
+                </div>
+                <div class="card-text no-m">
+                    <span id="dateToShow">date</span>
+                </div>
+                <hr>
+                <div class="horizontal-buttons-container">
+                    <button id="linkRemove" class="card-button">Remove link</button>
+                    <button id="more" class="card-button">More!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="card-no-results" class="card-background hide">
+        <div class="card">
+            <div class="card-close">
+                <i class="fa-solid fa-times"></i>
+            </div>
+            <div class="card-title">¯\_(ツ)_/¯</div>
+            <div class="card-body">
+                <div class="card-text">
+                    <span>Couldn't find anything for the selected search parameters. <br><br> Maybe try something else?</span>
+                </div>
+                <button id="no-results-ok" class="card-button">Ok</button>
+            </div>
+        </div>
+    </div>
+    <div id="card-configure" class="card-background hide">
+        <div class="card">
+            <div class="card-close">
+                <i class="fa-solid fa-times"></i>
+            </div>
+            <div class="card-title">Settings</div>
+            <div class="card-body">
+                <form id="updateCats">
+                    <div class="form-group">
+                        <label for="add_cat">
+                            Add new categories
+                        </label>
+                        <input type="text" class="form-control" id="add_cat" name="add_cat" placeholder="Enter the categorie name...">
+                        <label for="remove_cat">
+                            Remove existing category
+                        </label>
+                        <select name="remove_cat" id="remove_cat">
+                            <option disabled selected> -- select an option -- </option>
+                            <!-- this div will be filled on page load from database -->
+                        </select>
+                    </div>
+                    <button type="submit" class="card-button">OK</button>
+                </form>
+                <br>
+                <hr>
+                <form id="updateTags">
+                    <div class="form-group">
+                        <label for="add_tag">
+                            Add new tags
+                        </label>
+                        <input type="text" class="form-control" id="add_tag" name="add_tag" placeholder="Enter the tag...">
+                        <label for="remove_cat">
+                            Remove existing tag
+                        </label>
+                        <select name="remove_tag" id="remove_tag">
+                            <option disabled selected> -- select an option -- </option>
+                        </select>
+                    </div>
+                    <button type="submit" class="card-button">OK</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div id="card-add" class="card-background hide">
+        <div class="card">
+            <div class="card-close">
+                <i class="fa-solid fa-times"></i>
+            </div>
+            <div class="card-title">Add link</div>
+            <div class="card-body">
+                <form id="form-add">
+                    <div class="form-group">
+                        <label for="url">
+                            Link
+                            <span>
+                                <i class="fa-solid fa-check"></i>
+                            </span>
+                        </label>
+                        <input type="text" class="form-control" id="add_url" name="url" placeholder="Enter URL..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="title">
+                            Categorie
+                            <span>
+                                <i class="fa-solid fa-check"></i>
+                            </span>
+                        </label>
+                        <select name="categorie" id="add_categorie" required>
+                            <option disabled selected> -- select an option -- </option>
+                            <!-- this div will be filled on page load from database -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tags">
+                            Tags
+                            <span id="tagsCheckboxSpan">
+                                <label for="tagsCheckbox">save new tags</label>
+                                <input type="checkbox" id="tagsCheckbox" checked>
+                            </span>
+                        </label>
+                        <input type="text" class="form-control" id="add_tags" name="tags" placeholder="comma separated, no dash allowed..." required>
+                    </div>
+                    <div id="tagsInAdd" class="existing-tags">
+                        <!-- this div will be filled on page load from database -->
+                    </div>
+                    <hr>
+                    <button type="submit" class="card-button">Confirm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="script-min.js"></script>
+</body>
+</html>
