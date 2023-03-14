@@ -197,21 +197,23 @@ const prepareAddForm = () => {
         tags = tags_input.value;
 
         const tagsCheckbox = document.getElementById("tagsCheckbox");
-        if (tagsCheckbox.checked) {
-            //add tags to the db if user inputs new ones
-            const response = await fetch(`updateTags.php?add_tag=${tags}`);
-            const data = await response.text();
-            if (data !== 'OK') {
-                showMsg(data, 'bad');
-            }
-            //update tags and categories
-            await updateTagsCats();
-        }
+        // if (tagsCheckbox.checked) {
+        //     //add tags to the db if user inputs new ones
+        //     const response = await fetch(`updateTags.php?add_tag=${tags}`);
+        //     const data = await response.text();
+        //     if (data !== 'OK') {
+        //         showMsg(data, 'bad');
+        //     }
+        //     //update tags and categories
+        //     await updateTagsCats();
+        // }
 
         const response = await fetch(`add.php?url=${URL}&category=${category}&tags=${tags}`);
         const data = await response.text();
         if (data !== 'OK') {
             showMsg(data, 'bad');
+        } else {
+            showMsg('Adding new links is disabled in this demo version');
         }
         //reset the form
         addForm.reset();
@@ -338,6 +340,7 @@ const fillResultsCard = () => {
             if (data !== 'OK') {
                 showMsg(data, 'bad');
             } else {
+                showMsg('The delete function is disabled in this demo version')
                 //update the collection
                 await prepareCollection();
                 //if there are still other results, show the next one
@@ -406,7 +409,8 @@ const prepareCollection = async () => {
                         showMsg(data, 'bad');
                     } else {
                         //visually remove the row from the dom
-                        tr.remove();
+                        // tr.remove();
+                        showMsg('The delete function is disabled in this demo version')
                     }
                 }
             })
@@ -433,6 +437,8 @@ const prepareSettingsCats = () => {
         if (data !== 'OK') {
             //add failure message
             showMsg(data, 'bad');
+        } else {
+            showMsg('This function is disabled in the demo version')
         }
         //update tags and categories
         await updateTagsCats();
@@ -441,7 +447,7 @@ const prepareSettingsCats = () => {
         //close the card
         document.getElementById('card-configure').classList.add('hide');
         //add success message
-        showMsg('Categories list updated', 'good');
+        // showMsg('Categories list updated', 'good');
     })
 }
 
@@ -457,6 +463,8 @@ const prepareSettingsTags = () => {
         const data = await response.text();
         if (data !== 'OK') {
             showMsg(data, 'bad');
+        } else {
+            showMsg('This function is disabled in the demo version')
         }
         //update tags and categories
         await updateTagsCats();
@@ -465,7 +473,7 @@ const prepareSettingsTags = () => {
         //close the card
         document.getElementById('card-configure').classList.add('hide');
         //add success message
-        showMsg('Tags list updated', 'good');
+        // showMsg('Tags list updated', 'good');
     })
 }
 
