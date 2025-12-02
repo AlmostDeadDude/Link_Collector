@@ -275,21 +275,47 @@ const prepareRandomForm = () => {
             cat_input.classList.add('invalid');
             return
         }
-        const response = await fetch(`random.php?&category=${category}&tags=${tags}`);
-        const dataText = await response.text();
-        if (dataText.startsWith('error')) {
-            showMsg(dataText, 'bad');
-        } else {
-            const data = JSON.parse(dataText);
-            RESULTS = Array.isArray(data) ? data : [];
 
-            document.getElementById('card-random').classList.add('hide')
-
-            if (RESULTS.length === 0) {
-                document.getElementById('card-no-results').classList.remove('hide')
-            } else {
-                fillResultsCard();
+        let data = [];
+        try {
+            const response = await fetch(`random.php?&category=${category}&tags=${tags}`);
+            const dataText = await response.text();
+            if (dataText.startsWith('error')) {
+                throw new Error(dataText);
             }
+            const parsed = JSON.parse(dataText);
+            data = Array.isArray(parsed) ? parsed : [];
+        } catch (err) {
+            data = [...DEFAULT_COLLECTION];
+        }
+
+        //fallback if db returned empty
+        if (!data.length) {
+            data = [...DEFAULT_COLLECTION];
+        }
+
+        //apply client-side filters on fallback data
+        if (category && category !== '-- select an option --') {
+            data = data.filter(item => item.linkCATEGORY === category);
+        }
+        if (tags && tags.trim()) {
+            const wanted = tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+            if (wanted.length) {
+                data = data.filter(item => {
+                    const raw = typeof item.linkTAGS === 'string' ? item.linkTAGS.slice(1, item.linkTAGS.length - 1).split('-') : [];
+                    const lower = raw.map(t => t.toLowerCase());
+                    return wanted.every(tag => lower.includes(tag));
+                });
+            }
+        }
+
+        RESULTS = data;
+        document.getElementById('card-random').classList.add('hide')
+
+        if (RESULTS.length === 0) {
+            document.getElementById('card-no-results').classList.remove('hide')
+        } else {
+            fillResultsCard();
         }
 
         //reset the form
