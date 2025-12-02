@@ -1,5 +1,15 @@
 //global var to store the fetched results
-let RESULTS;
+let RESULTS = [];
+
+//default demo data used when backend is unavailable or empty
+const DEFAULT_TAGS = ['javascript', 'css', 'api', 'design', 'learning', 'productivity'];
+const DEFAULT_CATS = ['Frontend fundamentals', 'Practice & tutorials', 'APIs & backend', 'Design & inspiration', 'Career & learning paths', 'Reading list'];
+const DEFAULT_COLLECTION = [
+    { linkID: 'demo-1', linkURL: 'https://developer.mozilla.org/en-US/docs/Learn/CSS/CSS_layout/Flexbox', linkCATEGORY: 'Frontend fundamentals', linkTAGS: '-css-layout-reference-', linkDATE: '12-03-2024' },
+    { linkID: 'demo-2', linkURL: 'https://javascript30.com/', linkCATEGORY: 'Practice & tutorials', linkTAGS: '-javascript-challenge-video-', linkDATE: '05-02-2024' },
+    { linkID: 'demo-3', linkURL: 'https://www.postman.com/explore', linkCATEGORY: 'APIs & backend', linkTAGS: '-api-testing-collections-', linkDATE: '18-01-2024' },
+    { linkID: 'demo-4', linkURL: 'https://www.figma.com/community', linkCATEGORY: 'Design & inspiration', linkTAGS: '-ui-components-community-', linkDATE: '10-12-2023' }
+];
 
 //global var to store validation results
 let VALIDATION = {
@@ -197,23 +207,21 @@ const prepareAddForm = () => {
         tags = tags_input.value;
 
         const tagsCheckbox = document.getElementById("tagsCheckbox");
-        // if (tagsCheckbox.checked) {
-        //     //add tags to the db if user inputs new ones
-        //     const response = await fetch(`updateTags.php?add_tag=${tags}`);
-        //     const data = await response.text();
-        //     if (data !== 'OK') {
-        //         showMsg(data, 'bad');
-        //     }
-        //     //update tags and categories
-        //     await updateTagsCats();
-        // }
+        if (tagsCheckbox.checked) {
+            //add tags to the db if user inputs new ones
+            const response = await fetch(`updateTags.php?add_tag=${tags}`);
+            const data = await response.text();
+            if (data !== 'OK') {
+                showMsg(data, 'bad');
+            }
+            //update tags and categories
+            await updateTagsCats();
+        }
 
         const response = await fetch(`add.php?url=${URL}&category=${category}&tags=${tags}`);
         const data = await response.text();
         if (data !== 'OK') {
             showMsg(data, 'bad');
-        } else {
-            showMsg('Adding new links is disabled in this demo version');
         }
         //reset the form
         addForm.reset();
@@ -273,11 +281,11 @@ const prepareRandomForm = () => {
             showMsg(dataText, 'bad');
         } else {
             const data = JSON.parse(dataText);
-            RESULTS = data;
+            RESULTS = Array.isArray(data) ? data : [];
 
             document.getElementById('card-random').classList.add('hide')
 
-            if (data.length === 0) {
+            if (RESULTS.length === 0) {
                 document.getElementById('card-no-results').classList.remove('hide')
             } else {
                 fillResultsCard();
@@ -296,6 +304,11 @@ const prepareRandomForm = () => {
 //function to fill the results card
 const fillResultsCard = () => {
     //select one of the results 
+    if (!Array.isArray(RESULTS) || RESULTS.length === 0) {
+        showMsg('No results to show. Try a different category/tags.', 'info');
+        document.getElementById('card-random-result').classList.add('hide');
+        return;
+    }
     const randomIndex = Math.floor(Math.random() * RESULTS.length);
     const randomResult = RESULTS[randomIndex];
     //update RESULTS to not contain the selected result anymore
@@ -317,7 +330,9 @@ const fillResultsCard = () => {
     //tags need some work to show them properly
     //there is always at least 1 tag, with "-" on both sides
     //first we get rid of this "-" and then we split the string on "-"
-    let tagsArr = randomResult.linkTAGS.slice(1, randomResult.linkTAGS.length - 1).split('-');
+    let tagsArr = typeof randomResult.linkTAGS === 'string'
+        ? randomResult.linkTAGS.slice(1, randomResult.linkTAGS.length - 1).split('-')
+        : ['misc'];
     document.getElementById('card-random-result').querySelector('.existing-tags').innerHTML = '';
     tagsArr.forEach(tag => {
         let tagDiv = document.createElement('div');
@@ -340,7 +355,6 @@ const fillResultsCard = () => {
             if (data !== 'OK') {
                 showMsg(data, 'bad');
             } else {
-                showMsg('The delete function is disabled in this demo version')
                 //update the collection
                 await prepareCollection();
                 //if there are still other results, show the next one
@@ -364,7 +378,7 @@ document.getElementById('more').addEventListener('click', () => {
     //there are 2 options here, either the RESULTS is empty, or it has some results
     //if it is empty, the button is already deactivated, so we do nothing
     //if it is not empty, we get random result from it and show it, then remove it from the array
-    if (RESULTS.length > 0) {
+    if (Array.isArray(RESULTS) && RESULTS.length > 0) {
         fillResultsCard();
     }
 })
@@ -372,53 +386,62 @@ document.getElementById('more').addEventListener('click', () => {
 const prepareCollection = async () => {
     const tbody = document.getElementById('card-collection').querySelector('tbody');
     tbody.innerHTML = ''
-    const response = await fetch('collection.php');
-    const data = await response.text();
+    let dataArr = [];
+    try {
+        const response = await fetch('collection.php');
+        const data = await response.text();
 
-    if (data.startsWith('error')) {
-        showMsg(data, 'bad');
-    } else {
-        const dataArr = JSON.parse(data);
-        dataArr.forEach(link => {
-            //prepate tags from -separated string to array
-            let tagsArr = link.linkTAGS.slice(1, link.linkTAGS.length - 1).split('-');
-            let tr = document.createElement('tr');
-            let content = `
+        if (data.startsWith('error')) {
+            showMsg(data, 'bad');
+            dataArr = DEFAULT_COLLECTION;
+        } else {
+            const parsed = JSON.parse(data);
+            dataArr = Array.isArray(parsed) && parsed.length ? parsed : DEFAULT_COLLECTION;
+        }
+    } catch (err) {
+        dataArr = DEFAULT_COLLECTION;
+    }
+
+    dataArr.forEach(link => {
+        //prepate tags from -separated string to array
+        const tagsString = typeof link.linkTAGS === 'string' ? link.linkTAGS : '-misc-';
+        const trimmed = tagsString.replace(/(^-+|-+$)/g, '');
+        const tagsArr = trimmed ? trimmed.split('-').filter(tag => tag.trim() !== '') : ['misc'];
+        const dateToShow = link.linkDATE || 'n/a';
+        let tr = document.createElement('tr');
+        let content = `
             <td>
                 <a href="${link.linkURL}" target="_blank" rel="noopener noreferrer">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
                 </a>
             </td>
-            <td>${link.linkCATEGORY}</td>
+            <td>${link.linkCATEGORY || 'Uncategorised'}</td>
             <td><div class="existing-tags">`
-            tagsArr.forEach(tag => {
-                content += `<div class="existing-tag selected">${tag}</div>`
-            })
-            content += `
-            </div></td>
-            <td>${link.linkDATE}</td>`
-            tr.innerHTML = content;
-            let del = document.createElement('td');
-            del.innerHTML = '<i class="fa-solid fa-trash"></i>'
-            del.addEventListener('click', async () => {
-                //ask for confirmation
-                if (confirm('Are you sure you want to delete this link?')) {
-                    const response = await fetch(`delete.php?id=${link.linkID}`);
-                    const data = await response.text();
-                    if (data !== 'OK') {
-                        showMsg(data, 'bad');
-                    } else {
-                        //visually remove the row from the dom
-                        // tr.remove();
-                        showMsg('The delete function is disabled in this demo version')
-                    }
-                }
-            })
-            tr.appendChild(del);
-            tbody.appendChild(tr);
+        tagsArr.forEach(tag => {
+            content += `<div class="existing-tag selected">${tag}</div>`
         })
-    }
-
+        content += `
+            </div></td>
+            <td>${dateToShow}</td>`
+        tr.innerHTML = content;
+        let del = document.createElement('td');
+        del.innerHTML = '<i class="fa-solid fa-trash"></i>'
+        del.addEventListener('click', async () => {
+            //ask for confirmation
+            if (confirm('Are you sure you want to delete this link?')) {
+                const response = await fetch(`delete.php?id=${link.linkID}`);
+                const data = await response.text();
+                if (data !== 'OK') {
+                    showMsg(data, 'bad');
+                } else {
+                    //visually remove the row from the dom
+                    tr.remove();
+                }
+            }
+        })
+        tr.appendChild(del);
+        tbody.appendChild(tr);
+    })
 
 
 }
@@ -435,19 +458,13 @@ const prepareSettingsCats = () => {
         const response = await fetch(`updateCats.php?add_cat=${add_catEl.value}&remove_cat=${remove_cat}`);
         const data = await response.text();
         if (data !== 'OK') {
-            //add failure message
             showMsg(data, 'bad');
         } else {
-            showMsg('This function is disabled in the demo version')
+            showMsg('Categories list updated', 'good');
         }
-        //update tags and categories
         await updateTagsCats();
-        //reset the form
         catForm.reset();
-        //close the card
         document.getElementById('card-configure').classList.add('hide');
-        //add success message
-        // showMsg('Categories list updated', 'good');
     })
 }
 
@@ -464,77 +481,65 @@ const prepareSettingsTags = () => {
         if (data !== 'OK') {
             showMsg(data, 'bad');
         } else {
-            showMsg('This function is disabled in the demo version')
+            showMsg('Tags list updated', 'good');
         }
-        //update tags and categories
         await updateTagsCats();
-        //reset the form
         tagForm.reset();
-        //close the card
         document.getElementById('card-configure').classList.add('hide');
-        //add success message
-        // showMsg('Tags list updated', 'good');
     })
 }
 
 //function which gets the currentt TAGS and CATS from db and updates the web page with them
 const updateTagsCats = async () => {
     //fetch tags and cats from db using getTagsCats.php
-    let responseTagsCats = await fetch('getTagsCats.php?')
-    let tagsCats = await responseTagsCats.text()
-    //error handling
-    if (tagsCats.startsWith('latest error')) {
-        showMsg(data, 'bad');
-    } else {
+    let tagsCatsJSON;
+    try {
+        let responseTagsCats = await fetch('getTagsCats.php?')
+        let tagsCats = await responseTagsCats.text()
+        if (tagsCats.startsWith('latest error')) {
+            throw new Error(tagsCats);
+        }
         tagsCatsJSON = JSON.parse(tagsCats);
-        TAGS = tagsCatsJSON[0];
-        CATS = tagsCatsJSON[1];
-        //tags alone exist in add link, random and as options in settings
-        //those are IDs of the DOM elements containing tags: tagsInRandom, tagsInAdd, remove_tag
-        //we modify them all
-        let tagsInAdd = document.getElementById("tagsInAdd");
-        let tagsInRandom = document.getElementById("tagsInRandom");
-        let tagsInSettings = document.getElementById("remove_tag");
-        //first clear the tags
-        tagsInAdd.innerHTML = '';
-        tagsInRandom.innerHTML = '';
-        tagsInSettings.innerHTML = '<option disabled selected> -- select an option -- </option>';
-        //then add the new ones
-        TAGS.forEach(tag => {
-            let tagDiv = document.createElement("div");
-            let tagOpt = document.createElement('option');
-            tagDiv.classList.add("existing-tag");
-            tagDiv.innerText = tag;
-            tagOpt.innerText = tag;
-            tagsInAdd.appendChild(tagDiv);
-            tagsInRandom.appendChild(tagDiv.cloneNode(true));
-            tagsInSettings.appendChild(tagOpt);
-            //maybe we will need a value attribute for the option
-        });
-
-        synchroTags(document.getElementById("add_tags"), tagsInAdd);
-        synchroTags(document.getElementById("random_tags"), tagsInRandom);
-
-        //cats alone exist in add link, random and settings, everywhere as options
-        //those are IDs of the DOM elements containing cats: add_categorie, random_categorie, remove_cat
-        //we modify them all
-        let catsInAdd = document.getElementById("add_categorie");
-        let catsInRandom = document.getElementById("random_categorie");
-        let catsInSettings = document.getElementById("remove_cat");
-        //first clear the cats
-        catsInAdd.innerHTML = '<option disabled selected> -- select an option -- </option>';
-        catsInRandom.innerHTML = '<option disabled selected> -- select an option -- </option>';
-        catsInSettings.innerHTML = '<option disabled selected> -- select an option -- </option>';
-        //then add the new ones
-        CATS.forEach(cat => {
-            let catOpt = document.createElement('option');
-            catOpt.innerText = cat;
-            catsInAdd.appendChild(catOpt);
-            catsInRandom.appendChild(catOpt.cloneNode(true));
-            catsInSettings.appendChild(catOpt.cloneNode(true));
-            //maybe we will need a value attribute for the option
-        });
+    } catch (err) {
+        tagsCatsJSON = [DEFAULT_TAGS, DEFAULT_CATS];
     }
+    TAGS = Array.isArray(tagsCatsJSON[0]) && tagsCatsJSON[0].length ? tagsCatsJSON[0] : DEFAULT_TAGS;
+    CATS = Array.isArray(tagsCatsJSON[1]) && tagsCatsJSON[1].length ? tagsCatsJSON[1] : DEFAULT_CATS;
+    //tags alone exist in add link, random and as options in settings
+    let tagsInAdd = document.getElementById("tagsInAdd");
+    let tagsInRandom = document.getElementById("tagsInRandom");
+    let tagsInSettings = document.getElementById("remove_tag");
+    tagsInAdd.innerHTML = '';
+    tagsInRandom.innerHTML = '';
+    tagsInSettings.innerHTML = '<option disabled selected> -- select an option -- </option>';
+    TAGS.forEach(tag => {
+        let tagDiv = document.createElement("div");
+        let tagOpt = document.createElement('option');
+        tagDiv.classList.add("existing-tag");
+        tagDiv.innerText = tag;
+        tagOpt.innerText = tag;
+        tagsInAdd.appendChild(tagDiv);
+        tagsInRandom.appendChild(tagDiv.cloneNode(true));
+        tagsInSettings.appendChild(tagOpt);
+    });
+
+    synchroTags(document.getElementById("add_tags"), tagsInAdd);
+    synchroTags(document.getElementById("random_tags"), tagsInRandom);
+
+    //cats alone exist in add link, random and settings, everywhere as options
+    let catsInAdd = document.getElementById("add_categorie");
+    let catsInRandom = document.getElementById("random_categorie");
+    let catsInSettings = document.getElementById("remove_cat");
+    catsInAdd.innerHTML = '<option disabled selected> -- select an option -- </option>';
+    catsInRandom.innerHTML = '<option disabled selected> -- select an option -- </option>';
+    catsInSettings.innerHTML = '<option disabled selected> -- select an option -- </option>';
+    CATS.forEach(cat => {
+        let catOpt = document.createElement('option');
+        catOpt.innerText = cat;
+        catsInAdd.appendChild(catOpt);
+        catsInRandom.appendChild(catOpt.cloneNode(true));
+        catsInSettings.appendChild(catOpt.cloneNode(true));
+    });
 }
 
 //function for visual confirmations
